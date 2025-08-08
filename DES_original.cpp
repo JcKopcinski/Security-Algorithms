@@ -31,6 +31,6 @@ int main(){
 
 	ofstream file("testtext.txt");
 	file << food;
-	file.close()
+	file.close();
 
 }
