@@ -1,7 +1,8 @@
-Encryption/Decryption Algorithsm to code
+Encryption/Decryption Algorithms to code
 
 Key Handling ALgorithms
 1. Diffie-Helman Key Exchange and Forward Secrecy
+
 Basic
 1. DES algorithms
 	a. DES
@@ -16,6 +17,7 @@ Modern:
 AES-128
 AES-192
 AES-256
+RHA
 
 Future:
 AES & ChaCha20
