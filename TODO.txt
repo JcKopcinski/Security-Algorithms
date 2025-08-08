@@ -1,0 +1,16 @@
+Encryption/Decryption Algorithsm to code
+
+Basic
+1. DES algorithms
+	a. DES
+	b. Triple DES
+2. RC4
+3. 3DES
+
+Modern:
+AES-128
+AES-192
+AES-256
+
+Future:
+AES & ChaCha20
