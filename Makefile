@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++17
+CXXFLAGS = -Wall -Wextra -Werror -pedantic -Wunused -ggdb -std=c++20
 
 TARGET = DES_original
 SRCS = DES_original.cpp
