@@ -24,6 +24,32 @@
 
 using namespace std;
 
+uint8_t set_odd_parity(uint8_t byte){
+	int ones = 0;
+	for (int i=0; i < 7; i++){ //count the number of ones
+		if(byte & (1 << i)) ++ones;
+	}
+
+	return byte & 0xFE | ((ones%2) == 0 ? 1 : 0);
+}
+
+uint64_t generate_random_key64(){
+	uint8_t key[8];
+
+	ifstream urandom("/dev/urandom", ios::in | ios::binary);
+	if(!urandom){
+		cerr << "Failed to open /dev/urandom\n";
+	}
+
+	//fill the key with the random num
+	urandom.read(reinterpret_cast<char *>(key), sizeof(key));
+	urandom.close();
+
+	for(int i = 0; i < 8; i++){
+		key[i] = set_odd_parity(key[i]);
+	}
+}
+
 int main(int argc, char **argv){
 
 	if(argc != 2){
