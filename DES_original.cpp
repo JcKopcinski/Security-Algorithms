@@ -24,13 +24,19 @@
 
 using namespace std;
 
-int main(){
-	cout << "What did you eat?";
-	string food;
-	cin >> food;
+int main(int argc, char **argv){
 
-	ofstream file("testtext.txt");
-	file << food;
-	file.close();
+	if(argc != 2){
+		cerr << "Usage: ./DES_original <file.txt>\n";
+		return 1;
+	}
 
+
+	ifstream inputfile(argv[1]);
+	if(!inputfile){
+		throw runtime_error(string("Error Opening file: ") + argv[1]);
+	}
+
+	inputfile.close();
+	return 0;
 }
