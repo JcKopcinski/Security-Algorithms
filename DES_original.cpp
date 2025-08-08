@@ -16,38 +16,45 @@
 //Feistel Function of DES:
 //1.The 32 bit half block taken from earlier get expanded to 48 bits, by duplicating half the bits
 //
-//
-//
-
 #include <iostream>
 #include <fstream>
+#include <cstdint>
+#include <array>
 
 using namespace std;
 
 uint8_t set_odd_parity(uint8_t byte){
 	int ones = 0;
-	for (int i=0; i < 7; i++){ //count the number of ones
+	for (int i = 1; i < 8; i++){ //count the number of ones
 		if(byte & (1 << i)) ++ones;
 	}
 
-	return byte & 0xFE | ((ones%2) == 0 ? 1 : 0);
+	byte = (byte & 0xFE) | ((ones%2) == 0 ? 1 : 0);
+	return byte;
 }
 
-uint64_t generate_random_key64(){
-	uint8_t key[8];
+array<uint8_t, 7> generate_random_key56(){
+	array<uint8_t, 7>key;
 
 	ifstream urandom("/dev/urandom", ios::in | ios::binary);
 	if(!urandom){
 		cerr << "Failed to open /dev/urandom\n";
+		
 	}
 
 	//fill the key with the random num
-	urandom.read(reinterpret_cast<char *>(key), sizeof(key));
+	urandom.read(reinterpret_cast<char *>(key.data()), key.size());
 	urandom.close();
 
-	for(int i = 0; i < 8; i++){
-		key[i] = set_odd_parity(key[i]);
+	for(auto& byte : key){
+		byte = set_odd_parity(byte);
 	}
+
+	return key;
+}
+
+int key_schedule(array<uint8_t, 8> key){
+	return 0;	
 }
 
 int main(int argc, char **argv){
@@ -63,6 +70,7 @@ int main(int argc, char **argv){
 		throw runtime_error(string("Error Opening file: ") + argv[1]);
 	}
 
+	//generate out random key to be used for encryption
 	inputfile.close();
 	return 0;
 }
