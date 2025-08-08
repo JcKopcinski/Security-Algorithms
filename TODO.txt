@@ -1,8 +1,13 @@
 Encryption/Decryption Algorithsm to code
 
+Key Handling ALgorithms
+1. Diffie-Helman Key Exchange and Forward Secrecy
 Basic
 1. DES algorithms
 	a. DES
+		-Feistel Algorithm
+		-Key Scheduler
+		-Gey Generator - DONE
 	b. Triple DES
 2. RC4
 3. 3DES

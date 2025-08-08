@@ -17,9 +17,10 @@
 //1.The 32 bit half block taken from earlier get expanded to 48 bits, by duplicating half the bits
 //
 #include <iostream>
-#include <fstream>
-#include <cstdint>
+#include <fstream> #include <cstdint>
 #include <array>
+
+#define SHIFT_MASK 0xC081
 
 using namespace std;
 
@@ -33,8 +34,8 @@ uint8_t set_odd_parity(uint8_t byte){
 	return byte;
 }
 
-array<uint8_t, 7> generate_random_key56(){
-	array<uint8_t, 7>key;
+array<uint8_t, 8> generate_random_key64_oddparity(){
+	array<uint8_t, 8>key;
 
 	ifstream urandom("/dev/urandom", ios::in | ios::binary);
 	if(!urandom){
@@ -53,11 +54,67 @@ array<uint8_t, 7> generate_random_key56(){
 	return key;
 }
 
-int key_schedule(array<uint8_t, 8> key){
-	return 0;	
+uint32_t left_circular_shift28(uint32_t half_subkey, int k){
+	half_subkey &= 0x0FFFFFFF;
+	return ((value << k) | (value >> (28 - k))) & 0x0FFFFFFF;
 }
 
+uint64_t permuted_choice(uint32_t& C, uint32_t& D, int round){
+
+	int shift_amount = ((SHIFT_MASK >> (15 - round)) & 1) ?  1 : 2;
+	C = left_circular_shift28(C, shift_amount)
+	D = left_circular_shift28(D, shift_amount)
+
+	uint64_t combined = (static_cast<uint64_t>(C) << 28) | D;
+	
+	constexpr uint8_t PC2_map[48] = {
+        13,16,10,23, 0, 4,
+         2,27,14, 5,20, 9,
+        22,18,11, 3,25, 7,
+        15, 6,26,19,12, 1,
+        40,51,30,36,46,54,
+        29,39,50,44,32,47,
+        43,48,38,55,33,52,
+        45,41,49,35,28,31
+	};
+
+	uint64_t subkey = 0;
+	for (int i = 0; i < 48; i++){
+		subkey <<= 1;
+		subkey |= (combined >> (55 - PC2_map[i])) & 1;
+	}
+
+	return subkey;
+}
+
+pair::<uint32_t, uint32_t> call_permuted_choice1(uint64_t key){
+
+	uint64_t key56 = 0;
+	constexpr uint8_t PC1_map[56] = {
+    56, 48, 40, 32, 24, 16,  8,
+     0, 57, 49, 41, 33, 25, 17,
+     9,  1, 58, 50, 42, 34, 26,
+    18, 10,  2, 59, 51, 43, 35,
+    62, 54, 46, 38, 30, 22, 14,
+     6, 61, 53, 45, 37, 29, 21,
+    13,  5, 60, 52, 44, 36, 28,
+    20, 12,  4, 27, 19, 11,  3
+	};
+
+	for(int i = 0; i < 56; i++){
+		key56 <<= 1;
+		key56 |= (key >> (63 - PC1_map[i])) & 1;
+	}
+
+	uint32_t C0 = (key56 >> 28) & 0x0FFFFFFF;
+	uint32_t D0 = key56 & 0x0FFFFFFF;
+
+	return {C0, D0};
+
+}
 int main(int argc, char **argv){
+
+	array<uint8_t, 8> key;
 
 	if(argc != 2){
 		cerr << "Usage: ./DES_original <file.txt>\n";
@@ -71,6 +128,10 @@ int main(int argc, char **argv){
 	}
 
 	//generate out random key to be used for encryption
+	key = generate_random_key64_oddparity();
+		
+	//Pad the key to 64 bits...Ususally used for parity
+
 	inputfile.close();
 	return 0;
 }
