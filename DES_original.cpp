@@ -1,27 +1,8 @@
-//Block size is 64 bits
-//Key size is 64 bits, however only 56 is actually used by the algorithm
-	//The other 8 bits are used to check for bit parity and then discarded
-//Stored in 8 bytes with odd parity
-//	WHAT IS ODD PARITY THOUGH...
-//one bit per byte of the key is used for error detection. Nits 8, 16 .... 64 are the parity bits
-//DES, by itself, is not a secure means of encryption, but must be used with a mode of operation
-//	WHAT IS MODE OF OPERATION
-//Decryption uses the same process as encryption, but with the keys set in reverse order
-//
-//DES is split intop 16 stages, or rounds, of processing
-//There is also the Initial Permutation (IP) and final Permutaiton (FP), which are inverses of eachother. FP undoes IP...
-//
-//Before any of the rounds are processed, the block is divided into two 32 bit halves and processed alternatingly, and processed in a criss-cross pattern (Feistel Scheme). This ensure that both encrypting and decrypting are a very similar process. Thus, there is no need to separate the algorithms from one another. You jsut operate in reverse.
-//
-//Feistel Function of DES:
-//1.The 32 bit half block taken from earlier get expanded to 48 bits, by duplicating half the bits
-//
 #include <iostream>
 #include <fstream> #include <cstdint>
 #include <array>
 
 #define SHIFT_MASK 0xC081
-
 using namespace std;
 
 uint8_t set_odd_parity(uint8_t byte){
@@ -34,13 +15,13 @@ uint8_t set_odd_parity(uint8_t byte){
 	return byte;
 }
 
-array<uint8_t, 8> generate_random_key64_oddparity(){
+uint64_t generate_random_key64_oddparity(){
 	array<uint8_t, 8>key;
 
 	ifstream urandom("/dev/urandom", ios::in | ios::binary);
 	if(!urandom){
 		cerr << "Failed to open /dev/urandom\n";
-		
+		return 0;
 	}
 
 	//fill the key with the random num
@@ -50,7 +31,12 @@ array<uint8_t, 8> generate_random_key64_oddparity(){
 	for(auto& byte : key){
 		byte = set_odd_parity(byte);
 	}
-
+	
+	//convert key to uint64_t
+	uint64_t result = 0;
+	for(size_t i = 0; i < 8; i++){
+		result = (result << 8) | key[i];
+	}
 	return key;
 }
 
@@ -112,9 +98,10 @@ pair::<uint32_t, uint32_t> call_permuted_choice1(uint64_t key){
 	return {C0, D0};
 
 }
+
 int main(int argc, char **argv){
 
-	array<uint8_t, 8> key;
+	uint64_t key;
 
 	if(argc != 2){
 		cerr << "Usage: ./DES_original <file.txt>\n";
@@ -130,7 +117,6 @@ int main(int argc, char **argv){
 	//generate out random key to be used for encryption
 	key = generate_random_key64_oddparity();
 		
-	//Pad the key to 64 bits...Ususally used for parity
 
 	inputfile.close();
 	return 0;
