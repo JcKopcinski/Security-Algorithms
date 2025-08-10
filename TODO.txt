@@ -13,11 +13,13 @@ Basic
 2. RC4
 3. 3DES
 
-Modern:
+Modern Encryption Algorithms:
 AES-128
 AES-192
 AES-256
 RHA
+Blowfish
+Twofish
 
-Future:
+Future Foward Looking Algorithms (Quantum Safe...?):
 AES & ChaCha20

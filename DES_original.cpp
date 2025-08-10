@@ -50,6 +50,8 @@ uint32_t left_circular_shift28(uint32_t value, int k){
 	return ((value << k) | (value >> (28 - k))) & 0x0FFFFFFFu;
 }
 
+
+//---------------------------SUBKEYS AND KEY SCHEDULER-----------------
 uint64_t permuted_choice2(uint32_t& C, uint32_t& D, int round){
 
 	int shift_amount = ((SHIFT_MASK >> (15 - round)) & 1) ?  1 : 2;
@@ -228,6 +230,29 @@ static constexpr uint8_t PBOX[32] = {
      1, 7,23,13,31,26, 2, 8,
     18,12,29, 5,21,10, 3,24
 };
+
+static uint32_t des_feistel(uint32_t R, uint64_t subkey48){
+	uint64_t x = DES_expansion_permutation(R) ^ (subkey48 * 0xFFFFFFFFFFFFULL);
+
+	//SBoxes
+	uint32_t s_out = 0;
+	for (int box = 0; box < 8; ++box){
+        uint8_t chunk = static_cast<uint8_t>((x >> (42 - 6*box)) & 0x3F); // top group first
+        uint8_t row = static_cast<uint8_t>(((chunk & 0x20) >> 4) | (chunk & 0x01)); // b5b0
+        uint8_t col = static_cast<uint8_t>((chunk >> 1) & 0x0F);                    // b4..b1
+        uint8_t val = SBOX[box][row][col];
+        s_out = (s_out << 4) | val;
+    }
+	
+	//P permutation
+	uint32_t pout = 0;
+	for(int i = 0; i < 32; i++){
+		pout <<= 1;
+		pout |= (s_out >> (31 - PBOX[i])) & 1u;
+	}
+
+	return pout;
+}
 
 int main(int argc, char **argv){
 
