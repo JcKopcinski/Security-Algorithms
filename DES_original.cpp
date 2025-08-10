@@ -254,6 +254,31 @@ static uint32_t des_feistel(uint32_t R, uint64_t subkey48){
 	return pout;
 }
 
+static inline void des_make_subkeys(uint64_t key64, uint64_t subkeys[16]){
+	auto [C, D] = permuted_choice1(key64);
+	for (int r = 0; r < 16; r++){
+		subkeys[r] = permuted_choice2(C, D, r);
+	}
+}
+
+static uint64_t des_encrypt_block(uint64_t block, const uint64_t subkeys[16]){
+	uint64_t b = initial_permutation(block);
+	//split the block
+	uint32_t L = static_cast<uint32_t>(b >> 32);
+	uint32_t R = static_cast<uint32_t>(b & 0xFFFFFFFFULL);
+
+	for(int r = 0; r < 16; r++){
+		uint32_t f = des_feistel(R, subkeys[r]);
+		uint32_t newL = R;
+		uint32_t newR = L ^ f;
+		L = newL; R = newR;
+	}
+
+	//recombine
+	uint64_t rout = (static_cast<uint64_t>(R) << 32) | L; //note, this performs a final swap
+	return final_permutation(rout);
+}
+
 int main(int argc, char **argv){
 
 	uint64_t key;
