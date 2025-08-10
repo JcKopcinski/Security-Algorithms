@@ -1,5 +1,6 @@
 #include <iostream>
-#include <fstream> #include <cstdint>
+#include <fstream> 
+#include <cstdint>
 #include <array>
 
 #define SHIFT_MASK 0xC081
@@ -8,10 +9,10 @@ using namespace std;
 uint8_t set_odd_parity(uint8_t byte){
 	int ones = 0;
 	for (int i = 1; i < 8; i++){ //count the number of ones
-		if(byte & (1 << i)) ++ones;
+		if(byte & (1u << i)) ++ones;
 	}
 
-	byte = (byte & 0xFE) | ((ones%2) == 0 ? 1 : 0);
+	byte = (byte & 0xFEu) | ((ones%2) == 0 ? 1u : 0u);
 	return byte;
 }
 
@@ -26,7 +27,10 @@ uint64_t generate_random_key64_oddparity(){
 
 	//fill the key with the random num
 	urandom.read(reinterpret_cast<char *>(key.data()), key.size());
-	urandom.close();
+	if(urandom.gcount() != static_cast<std::streamsize>(key.size())){
+		cerr << "Short read from /dev/urandom\n";
+		return 0;
+	}
 
 	for(auto& byte : key){
 		byte = set_odd_parity(byte);
@@ -35,21 +39,22 @@ uint64_t generate_random_key64_oddparity(){
 	//convert key to uint64_t
 	uint64_t result = 0;
 	for(size_t i = 0; i < 8; i++){
-		result = (result << 8) | key[i];
+		result = (result << 8) | static_cast<uint64_t>(key[i]);
 	}
-	return key;
+
+	return result;
 }
 
 uint32_t left_circular_shift28(uint32_t half_subkey, int k){
-	half_subkey &= 0x0FFFFFFF;
+	half_subkey &= 0x0FFFFFFFu;
 	return ((value << k) | (value >> (28 - k))) & 0x0FFFFFFF;
 }
 
-uint64_t permuted_choice(uint32_t& C, uint32_t& D, int round){
+uint64_t permuted_choice2(uint32_t& C, uint32_t& D, int round){
 
 	int shift_amount = ((SHIFT_MASK >> (15 - round)) & 1) ?  1 : 2;
-	C = left_circular_shift28(C, shift_amount)
-	D = left_circular_shift28(D, shift_amount)
+	C = left_circular_shift28(C, shift_amount);
+	D = left_circular_shift28(D, shift_amount);
 
 	uint64_t combined = (static_cast<uint64_t>(C) << 28) | D;
 	
@@ -67,7 +72,7 @@ uint64_t permuted_choice(uint32_t& C, uint32_t& D, int round){
 	uint64_t subkey = 0;
 	for (int i = 0; i < 48; i++){
 		subkey <<= 1;
-		subkey |= (combined >> (55 - PC2_map[i])) & 1;
+		subkey |= (combined >> (55 - PC2_map[i])) & 1ULL;
 	}
 
 	return subkey;
@@ -89,11 +94,11 @@ pair::<uint32_t, uint32_t> call_permuted_choice1(uint64_t key){
 
 	for(int i = 0; i < 56; i++){
 		key56 <<= 1;
-		key56 |= (key >> (63 - PC1_map[i])) & 1;
+		key56 |= (key >> (63 - PC1_map[i])) & 1ULL;
 	}
 
-	uint32_t C0 = (key56 >> 28) & 0x0FFFFFFF;
-	uint32_t D0 = key56 & 0x0FFFFFFF;
+	uint32_t C0 = (key56 >> 28) & 0x0FFFFFFFULL;
+	uint32_t D0 = key56 & 0x0FFFFFFFULL;
 
 	return {C0, D0};
 
@@ -116,8 +121,11 @@ int main(int argc, char **argv){
 
 	//generate out random key to be used for encryption
 	key = generate_random_key64_oddparity();
-		
-
+	
+	//May need to save the key here for use in decrypting the file
+	
+	//Begin encryption here
+	
 	inputfile.close();
 	return 0;
 }
